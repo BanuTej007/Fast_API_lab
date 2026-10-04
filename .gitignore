@@ -1,0 +1,14 @@
+fastapi_lab1_env/
+
+__pycache__/
+*.py[cod]
+
+.ipynb_checkpoints/
+
+.env
+.env.*
+
+.vscode/
+
+.DS_Store
+Thumbs.db
