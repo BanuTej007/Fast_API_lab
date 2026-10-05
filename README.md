@@ -1,20 +1,3 @@
-
----
-- Video Explanation: [FastAPI lab](https://www.youtube.com/watch?v=KReburHqRIQ&list=PLcS4TrUUc53LeKBIyXAaERFKBJ3dvc9GZ&index=4)
-- Blog: [FastAPI Lab-1](https://www.mlwithramin.com/blog/fastapi-lab1)
-
----
-
-## Overview
-
-In this Lab, we will learn how to expose ML models as APIs using [FastAPI](https://fastapi.tiangolo.com/) and [uvicorn](https://www.uvicorn.org/).
-1. **FastAPI**: FastAPI is a modern, fast (high-performance), web framework for building APIs with Python based on standard Python type hints.
-2. **uvicorn**: Uvicorn is an [Asynchronous Server Gateway Interface - ASGI](https://youtu.be/vKjCkeJGbNk) web server implementation for Python. It is often used to serve FastAPI aplications.
-
-The workflow involves the following steps:
-1. Training a Decision Tree Classifier on Iris Dataset.
-2. Serving the trained model as an API using FastAPI and uvicorn.
-
 ## Setting up the lab
 
 1. Create a virtual environment(e.g. **fastapi_lab1_env**).
@@ -28,7 +11,7 @@ mlops_labs
     ├── assets/
     ├── fastapi_lab1_env/
     ├── model/
-    │   └── iris_model.pkl
+    │   └── digits_model.pkl
     ├── src/
     │   ├── __init__.py
     │   ├── data.py
@@ -87,64 +70,130 @@ You can also test out the results of your endpoints by interacting with them. Cl
 
 ### Data Models in FastAPI
 
-##### 1. IrisData class
+##### **1. DigitsData class:**
 
-```python
-class IrisData(BaseModel):
-    petal_length: float
-    sepal_length:float
-    petal_width:float
-    sepal_width:float
-```
+The request body can be represented using a Pydantic model containing the 64 pixel values required by the Digits model.
 
-The **IrisData** class is a [Pydantic model](https://docs.pydantic.dev/latest/concepts/models/) which defines the expected structure of the data for a request body. When you use it as a type annotation for a route operation parameter, FastAPI will perform the following actions:
-- **Request Body Reading:** FastAPI will read the request body as JSON.
-- **Data Conversion:** It will convert the corresponding types, if necessary.
-- **Data Validation:** It will validate the data. If the data is invalid, it will return a 422 Unprocessable Entity error response with details about what was incorrect.
+For example:
 
-#### 2. IrisResponse class
+class DigitsData(BaseModel):
+    pixel_0: float
+    pixel_1: float
+    pixel_2: float
+    # ...
+    pixel_63: float
 
-```python
-class IrisResponse(BaseModel):
-    response:int
-```
+The model receives the 64 pixel values corresponding to the 8 × 8 handwritten digit image.
 
-The **IrisResponse** class is another Pydantic model that defines the structure of the response data for an endpoint. When you specify **response_model=IrisResponse** in a route operation, it tells FastAPI to:
-- **Serialize the Output**: Convert the output data to JSON format according to the IrisResponse model.
-- **Document the API**: Include the IrisResponse model in the generated API documentation, so API consumers know what to expect in the response.
+#### **2. DigitsResponse class:**
 
----
+The prediction returned by the API can be represented using another Pydantic model:
+
+class DigitsResponse(BaseModel):
+    response: int
+
+The DigitsResponse class defines the structure of the response returned by the prediction endpoint.
+
+When:
+
+response_model=DigitsResponse
+
+is specified in a FastAPI route, FastAPI uses the model to:
+
+Serialize the output: Convert the Python response into the expected JSON structure.
+Validate the response: Ensure that the returned data follows the specified format.
+Document the API: Display the response structure in the automatically generated API documentation.
+
+For example, a successful prediction could return:
+
+{
+    "response": 7
+}
+
+where 7 is the digit predicted by the Decision Tree Classifier.
 
 ### FastAPI features
 
-1. **Request Body Reading**: When a client sends a request to a FastAPI endpoint, the request can include a body with data. For routes that expect data (commonly POST, PUT, or PATCH requests), this data is often in JSON format. FastAPI automatically reads the request body by checking the Content-Type header, which should be set to application/json for JSON payloads.
-2. **Data Conversion**: Once the request body is read, FastAPI utilizes Pydantic models to parse the JSON data. Pydantic attempts to construct an instance of the specified model using the data from the request body. During this instantiation, Pydantic converts the JSON data into the proper Python data types as declared in the model.
-    - For instance, if the JSON object has a field like petal_length with a value of "5.1" (a string), and the model expects a float, Pydantic will transform the string into a float. If conversion isn't possible (say, the value was "five point one"), Pydantic will raise a validation error.
-3. **Data Validation**: Pydantic checks that all required fields are present and that the values are of the correct type, adhering to any constraints defined in the model (such as string length or number range). If the validation passes, the endpoint has a verified Python object to work with. If validation fails (due to missing fields, incorrect types, or constraint violations), FastAPI responds with a 422 Unprocessable Entity status. This response includes a JSON body detailing the validation errors, aiding clients in correcting their request data.
-4. **Error Handling**: Error handling in FastAPI can be effectively managed using the HTTPException class. HTTPException is used to explicitly signal an HTTP error status code and return additional details about the error. When an HTTPException is raised within a route, FastAPI will catch the exception and use its content to form the HTTP response.
-- **Instantiation**: The HTTPException class is instantiated with at least two arguments: status_code and detail. The status_code argument is an integer that represents the HTTP status code (e.g., 404 for Not Found, 400 for Bad Request). The detail argument is a string or any JSON-encodable object that describes the error.
-- **Response**: When an HTTPException is raised, FastAPI sends an HTTP response with the status code specified. The detail provided in the HTTPException is sent as the body of the response in JSON format.
+**1. Request Body Reading**
 
-```python
+When a client sends data to a FastAPI endpoint, the request can contain a body, commonly in JSON format.
+
+For example:
+
+{
+    "pixel_0": 0,
+    "pixel_1": 0,
+    "pixel_2": 5,
+    "pixel_3": 13
+    ...
+}
+
+For a prediction request, the complete request contains the 64 pixel values required by the Digits model.
+
+FastAPI automatically reads the request body based on the Content-Type header, which is typically:
+
+application/json
+
+**2. Data Conversion:**
+
+FastAPI uses Pydantic models to parse and validate incoming JSON data.
+
+For example, if a field is declared as:
+
+pixel_0: float
+
+and the client sends:
+
+{
+    "pixel_0": "5"
+}
+
+Pydantic can convert the value to a floating-point number.
+
+If the value cannot be converted to the expected type, FastAPI returns a validation error.
+
+**3. Data Validation**
+
+Pydantic checks that:
+
+Required fields are present.
+Values have the correct data types.
+The request follows the structure defined by the Pydantic model.
+
+If validation fails, FastAPI normally returns a:
+
+422 Unprocessable Entity
+
+response containing details about the validation errors.
+
+**4. Error Handling**
+
+FastAPI provides the HTTPException class for explicitly returning HTTP errors.
+
+Example:
+
 from fastapi import FastAPI, HTTPException
 
 app = FastAPI()
 
 @app.get("/items/{item_id}")
 async def read_item(item_id: int):
-    item = get_item_by_id(item_id)  # Hypothetical function to fetch an item
+
+    item = get_item_by_id(item_id)
+
     if item is None:
-        raise HTTPException(status_code=404, detail=f"Item with ID {item_id} not found")
+        raise HTTPException(
+            status_code=404,
+            detail=f"Item with ID {item_id} not found"
+        )
+
     return item
-```
 
-In this example, **get_item_by_id** is a function that retrieves an item based on its ID. If no item with the given ID is found, an HTTPException with a 404 Not Found status code is raised, and the detail message is customized to include the ID of the item that was not found.
+In this example, if an item does not exist, FastAPI returns a 404 Not Found response.
 
-FastAPI will catch this exception and return a response with a 404 status code and a JSON body like this:
+The response would look like:
 
-```json
 {
     "detail": "Item with ID 1 not found"
 }
-```
 - For more information on how to handle errors in FASTAPI refer to this [documentation](https://fastapi.tiangolo.com/tutorial/handling-errors/).
