@@ -27,7 +27,7 @@ Note:
 
 ## Running the Lab
 
-1. First step is to train a Decision Tree Classifier(Although you have **`model/iris_model.pkl`** when you cloned from the repo, let's create a new model). To do this, move into **src/** folder with
+1. First step is to train a Decision Tree Classifier(model/digits_model,pkl). To do this, move into **src/** folder with
     ```bash
     cd src
     ```
