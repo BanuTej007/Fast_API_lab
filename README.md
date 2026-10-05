@@ -40,14 +40,7 @@ Note:
     uvicorn app:main --reload
     ```
 4. Testing endpoints - to view the documentation of your api model you can use [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) (or) [http://localhost:8000/docs](http://localhost:8000/docs) after you run you run your FastAPI app.
-    
-![API page](assets/docs.png)
-   
-You can also test out the results of your endpoints by interacting with them. Click on the dropdown button of your endpoint -> Try it out -> Fill the Request body -> Click on Execute button.
 
-![API response](assets/api_response.png)
-
-- You can also use other tools like [Postman](https://www.postman.com/) for API testing.
 
 ### FastAPI Syntax
 
